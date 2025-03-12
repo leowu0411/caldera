@@ -4,7 +4,7 @@ import secrets
 
 import jinja2
 import yaml
-
+import os
 
 CONFIG_MSG_TEMPLATE = jinja2.Template("""
 Log into Caldera with the following admin credentials:
@@ -40,6 +40,13 @@ def make_secure_config():
 
     config['users'] = dict(red=dict(red=secrets.token_urlsafe()),
                            blue=dict(blue=secrets.token_urlsafe()))
+
+    config["app.frontend.api_base_url"] = os.getenv("CALDERA_API_URL", "http://nginx")
+
+    if 'plugins' in config and isinstance(config['plugins'], list):
+        if 'modbus' not in config['plugins']:  
+            config['plugins'].append('modbus')
+            config['plugins'].append('iec61850')
 
     return config
 
