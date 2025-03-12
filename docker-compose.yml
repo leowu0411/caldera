@@ -63,6 +63,7 @@ services:
     volumes:
       - ./nginx-config/nginx.conf:/etc/nginx/nginx.conf 
       - ./certs:/etc/nginx/certs  
+    command: ["nginx", "-g", "daemon off;"]
     depends_on:
       - caldera_user1
       - caldera_user2
