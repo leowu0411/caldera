@@ -27,9 +27,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install pip requirements
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Set up config file and disable atomic by default
-RUN python3 -c "import app; import app.utility.config_generator; app.utility.config_generator.ensure_local_config();"; \
-    sed -i '/\- atomic/d' conf/local.yml;
 
 # Compile default sandcat agent binaries, which will download basic golang dependencies.
 
@@ -115,4 +112,8 @@ EXPOSE 8022
 # Default FTP port for FTP C2 channel
 EXPOSE 2222
 
-ENTRYPOINT ["python3", "server.py"]
+# Set up config file and disable atomic by default and start the server
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
