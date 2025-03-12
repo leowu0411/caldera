@@ -77,10 +77,9 @@ WORKDIR /usr/src/app
 # Install Node.js, npm, and other build VueJS front-end
 RUN apt-get update && \
     apt-get install -y nodejs npm && \
-    # Directly use npm to install dependencies and build the application
-    (cd plugins/magma && npm install) && \
+    export NODE_OPTIONS="--max-old-space-size=4096" && \
+    (cd plugins/magma && rm -rf node_modules && npm install --force) && \
     (cd plugins/magma && npm run build) && \
-    # Remove Node.js, npm, and other unnecessary packages
     apt-get remove -y nodejs npm && \
     apt-get autoremove -y && \
     apt-get clean && \
