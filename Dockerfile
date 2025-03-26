@@ -27,7 +27,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install pip requirements
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-
 # Compile default sandcat agent binaries, which will download basic golang dependencies.
 
 # Install Go dependencies
@@ -74,17 +73,10 @@ fi
 
 WORKDIR /usr/src/app
 
-# Install Node.js, npm, and other build VueJS front-end
 RUN apt-get update && \
     apt-get install -y nodejs npm && \
     # Directly use npm to install dependencies and build the application
-    (cd plugins/magma && npm install) && \
-    (cd plugins/magma && npm run build) && \
-    # Remove Node.js, npm, and other unnecessary packages
-    apt-get remove -y nodejs npm && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    (cd plugins/magma && npm install)
 
 WORKDIR /usr/src/app
 
