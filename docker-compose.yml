@@ -17,9 +17,6 @@ volumes:
 
 services:
   caldera_user1:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: caldera:latest
     container_name: caldera_user1
     networks:
@@ -39,9 +36,6 @@ services:
       - caldera_user1_frontend:/usr/src/app/plugins/magma/dist/assets
 
   caldera_user2:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: caldera:latest
     container_name: caldera_user2
     networks:
@@ -77,4 +71,4 @@ services:
     depends_on:
       - caldera_user1
       - caldera_user2
-
+      
