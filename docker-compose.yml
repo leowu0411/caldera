@@ -10,8 +10,10 @@ networks:
 volumes:
   caldera_user1_conf:
   caldera_user1_data:
+  caldera_user1_frontend:
   caldera_user2_conf:
   caldera_user2_data:
+  caldera_user2_frontend:
 
 services:
   caldera_user1:
@@ -24,14 +26,17 @@ services:
       caldera-net:
         ipv4_address: 172.18.0.10
     ports:
-      - "8021:8022"
+      - "8023:8022"
       - "8881:8888" 
     environment:
-      - CALDERA_API_URL=https://192.168.105.2/user1  
+      - CALDERA_API_URL=http://10.6.2.87:8888
+      - VITE_BASE_PATH=/user1/
+      - VITE_CALDERA_API_URL=https://10.6.2.87:443/user1/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user1_conf:/usr/src/app/conf
       - caldera_user1_data:/usr/src/app/data
+      - caldera_user1_frontend:/usr/src/app/plugins/magma/dist/assets
 
   caldera_user2:
     build:
@@ -46,11 +51,14 @@ services:
       - "8022:8022" 
       - "8882:8888"
     environment:
-      - CALDERA_API_URL=https://192.168.105.2/user2
+      - CALDERA_API_URL=http://10.6.2.87:8888
+      - VITE_BASE_PATH=/user2/
+      - VITE_CALDERA_API_URL=https://10.6.2.87:443/user2/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user2_conf:/usr/src/app/conf
       - caldera_user2_data:/usr/src/app/data
+      - caldera_user2_frontend:/usr/src/app/plugins/magma/dist/assets
 
   nginx:
     image: nginx:latest
@@ -59,10 +67,12 @@ services:
       caldera-net:
         ipv4_address: 172.18.0.100
     ports:
-      - "8443:443"    
+      - "443:443"    
     volumes:
-      - ./nginx-config/nginx.conf:/etc/nginx/nginx.conf 
+      - ./nginx-config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs  
+      - caldera_user1_frontend:/usr/share/nginx/html/user1
+      - caldera_user2_frontend:/usr/share/nginx/html/user2
     command: ["nginx", "-g", "daemon off;"]
     depends_on:
       - caldera_user1
