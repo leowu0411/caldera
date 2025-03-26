@@ -277,11 +277,16 @@ if __name__ == "__main__":
     if args.build:
         if len(os.listdir(MAGMA_PATH)) > 0:
             logging.info("Building VueJS front-end.")
+            vite_base_path = os.getenv("VITE_BASE_PATH", "/")
+            vite_caldera_api_url = os.getenv("VITE_CALDERA_API_URL", "/api/v2")
+            env_vars = os.environ.copy()
+            env_vars["VITE_BASE_PATH"] = vite_base_path
+            env_vars["VITE_CALDERA_API_URL"] = vite_caldera_api_url
             vite_temp_path = os.path.join(MAGMA_PATH, "dist-temp")  # Temporary build dir
             vite_final_path = os.path.join(MAGMA_PATH, "dist/assets")  # Final build dir
             # install_npm()
             # subprocess.run(["npm", "install"], cwd=MAGMA_PATH, check=True)
-            subprocess.run(["npm", "run", "build"], cwd=MAGMA_PATH, check=True)
+            subprocess.run(["npm", "run", "build"], cwd=MAGMA_PATH, check=True, env=env_vars)
             if os.path.exists(vite_temp_path):
                 for filename in os.listdir(vite_temp_path):
                     temp_file_path = os.path.join(vite_temp_path, filename)
@@ -294,6 +299,7 @@ if __name__ == "__main__":
             else:
                 logging.error("VueJS build failed. Check the build logs for more information.")
             remove_npm()
+            logging.info(f"VueJS front-end build complete with base path: {vite_base_path}")
         else:
             logging.warning(
                 f"[bright_yellow]The `--build` flag was supplied, but the Caldera v5 Vue UI is not present."
