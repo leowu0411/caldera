@@ -26,9 +26,9 @@ services:
       - "8023:8022"
       - "8881:8888" 
     environment:
-      - CALDERA_API_URL=http://10.6.2.87:8888
+      - CALDERA_API_URL=http://172.18.0.10:8888
       - VITE_BASE_PATH=/user1/
-      - VITE_CALDERA_API_URL=https://SERVER_ADDRESS/user1/
+      - VITE_CALDERA_API_URL=https://YOUR_SERVER_ADDRESS/user1/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user1_conf:/usr/src/app/conf
@@ -45,9 +45,9 @@ services:
       - "8022:8022" 
       - "8882:8888"
     environment:
-      - CALDERA_API_URL=/SERVER_ADDRESS/
+      - CALDERA_API_URL=http://172.18.0.11:8888
       - VITE_BASE_PATH=/user2/
-      - VITE_CALDERA_API_URL=https://SERVER_ADDRESS/user2/
+      - VITE_CALDERA_API_URL=https://YOUR_SERVER_ADDRESS/user2/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user2_conf:/usr/src/app/conf
@@ -63,7 +63,7 @@ services:
     ports:
       - "443:443"    
     volumes:
-      - ./nginx-config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs  
       - caldera_user1_frontend:/usr/share/nginx/html/user1
       - caldera_user2_frontend:/usr/share/nginx/html/user2
