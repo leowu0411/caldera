@@ -8,6 +8,7 @@ from rich.theme import Theme
 import sys
 import warnings
 import subprocess
+import shutil
 
 import aiohttp_apispec
 from aiohttp_apispec import validation_middleware
@@ -109,6 +110,19 @@ def run_tasks(services, run_vue_server=False):
             services.get("app_svc").teardown(main_config_file=args.environment)
         )
 
+def install_npm():
+    """ Installs Node.js & npm inside the container (temporary) """
+    logging.info("Installing Node.js & npm...")
+    subprocess.run(["apt-get", "update"], check=True)
+    subprocess.run(["apt-get", "install", "-y", "nodejs", "npm"], check=True)
+
+def remove_npm():
+    """ Removes Node.js & npm after the build to keep the container lightweight """
+    logging.info("Cleaning up Node.js & npm to reduce container size...")
+    subprocess.run(["apt-get", "remove", "-y", "nodejs", "npm"], check=True)
+    subprocess.run(["apt-get", "autoremove", "-y"], check=True)
+    subprocess.run(["apt-get", "clean"], check=True)
+    subprocess.run(["rm", "-rf", "/var/lib/apt/lists/*", "/tmp/*", "/var/tmp/*"], check=True)
 
 def init_swagger_documentation(app):
     """Makes swagger documentation available at /api/docs for any endpoints
@@ -263,9 +277,23 @@ if __name__ == "__main__":
     if args.build:
         if len(os.listdir(MAGMA_PATH)) > 0:
             logging.info("Building VueJS front-end.")
-            subprocess.run(["npm", "install"], cwd=MAGMA_PATH, check=True)
+            vite_temp_path = os.path.join(MAGMA_PATH, "dist-temp")  # Temporary build dir
+            vite_final_path = os.path.join(MAGMA_PATH, "dist/assets")  # Final build dir
+            # install_npm()
+            # subprocess.run(["npm", "install"], cwd=MAGMA_PATH, check=True)
             subprocess.run(["npm", "run", "build"], cwd=MAGMA_PATH, check=True)
-            logging.info("VueJS front-end build complete.")
+            if os.path.exists(vite_temp_path):
+                for filename in os.listdir(vite_temp_path):
+                    temp_file_path = os.path.join(vite_temp_path, filename)
+                    final_file_path = os.path.join(vite_final_path, filename)
+
+                    if os.path.isdir(temp_file_path):
+                        shutil.copytree(temp_file_path, final_file_path, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(temp_file_path, final_file_path)
+            else:
+                logging.error("VueJS build failed. Check the build logs for more information.")
+            remove_npm()
         else:
             logging.warning(
                 f"[bright_yellow]The `--build` flag was supplied, but the Caldera v5 Vue UI is not present."
