@@ -48,4 +48,4 @@
 	url = https://github.com/mitre/emu.git
 [submodule "plugins/magma"]
 	path = plugins/magma
-	url = https://github.com/mitre/magma.git
+	url = https://github.com/leowu0411/magma.git
