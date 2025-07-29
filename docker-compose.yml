@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   caldera-net:
     driver: bridge
@@ -8,22 +6,43 @@ networks:
         - subnet: 172.18.0.0/16
 
 volumes:
-  caldera_user1_conf:
-  caldera_user1_data:
-  caldera_user1_frontend:
-  caldera_user2_conf:
-  caldera_user2_data:
-  caldera_user2_frontend:
-  caldera_user3_conf:
-  caldera_user3_data:
-  caldera_user3_frontend:
-  openplc1_data:
-  openplc2_data:
-  openplc3_data:
+  #–– Caldera tenants ––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  caldera_user1_conf: {}
+  caldera_user1_data: {}
+  caldera_user1_frontend: {}
+  caldera_user2_conf: {}
+  caldera_user2_data: {}
+  caldera_user2_frontend: {}
+  caldera_user3_conf: {}
+  caldera_user3_data: {}
+  caldera_user3_frontend: {}
+  #–– PLC persistent data ––––––––––––––––––––––––––––––––––––––––––––––––––––
+  openplc1_data: {}
+  openplc2_data: {}
+  openplc3_data: {}
 
+x-caldera-base: &caldera-base
+  image: caldera:latest
+  command: ["--log", "DEBUG"]
+  restart: unless-stopped
+  networks:
+    caldera-net:
+
+x-openplc-base: &openplc-base
+  image: victim:latest
+  restart: unless-stopped
+  networks:
+    caldera-net:
+
+x-agent-base: &agent-base
+  build: ./agent
+  restart: unless-stopped
+  networks:
+    caldera-net:
 services:
+  #───────────────────────── Caldera tenants ──────────────────────────────────
   caldera_user1:
-    image: caldera:latest
+    <<: *caldera-base
     container_name: caldera_user1
     networks:
       caldera-net:
@@ -32,14 +51,13 @@ services:
       - CALDERA_API_URL=http://172.18.0.10:8888
       - VITE_BASE_PATH=/user1/
       - VITE_CALDERA_API_URL=https://140.116.169.80/user1/
-    command: ["--log", "DEBUG"]
     volumes:
       - caldera_user1_conf:/usr/src/app/conf
       - caldera_user1_data:/usr/src/app/data
       - caldera_user1_frontend:/usr/src/app/plugins/magma/dist/assets
 
   caldera_user2:
-    image: caldera:latest
+    <<: *caldera-base
     container_name: caldera_user2
     networks:
       caldera-net:
@@ -48,14 +66,13 @@ services:
       - CALDERA_API_URL=http://172.18.0.11:8888
       - VITE_BASE_PATH=/user2/
       - VITE_CALDERA_API_URL=https://140.116.169.80/user2/
-    command: ["--log", "DEBUG"]
     volumes:
       - caldera_user2_conf:/usr/src/app/conf
       - caldera_user2_data:/usr/src/app/data
       - caldera_user2_frontend:/usr/src/app/plugins/magma/dist/assets
 
   caldera_user3:
-    image: caldera:latest
+    <<: *caldera-base
     container_name: caldera_user3
     networks:
       caldera-net:
@@ -64,13 +81,14 @@ services:
       - CALDERA_API_URL=http://172.18.0.12:8888
       - VITE_BASE_PATH=/user3/
       - VITE_CALDERA_API_URL=https://140.116.169.80/user3/
-    command: ["--log", "DEBUG"]
     volumes:
       - caldera_user3_conf:/usr/src/app/conf
       - caldera_user3_data:/usr/src/app/data
       - caldera_user3_frontend:/usr/src/app/plugins/magma/dist/assets
+
+  #───────────────────────── PLC / OpenPLC sim ────────────────────────────────
   openplc1:
-    image: victim:latest
+    <<: *openplc-base
     container_name: victim_user1
     networks:
       caldera-net:
@@ -78,11 +96,11 @@ services:
     volumes:
       - openplc1_data:/docker_persistent
     ports:
-      - "8022:502"
-      - "8888:8080"
+      - "8022:502"   # Modbus
+      - "8888:8080"  # Web-UI
 
   openplc2:
-    image: victim:latest
+    <<: *openplc-base
     container_name: victim_user2
     networks:
       caldera-net:
@@ -94,7 +112,7 @@ services:
       - "8889:8080"
 
   openplc3:
-    image: victim:latest
+    <<: *openplc-base
     container_name: victim_user3
     networks:
       caldera-net:
@@ -105,25 +123,68 @@ services:
       - "8024:502"
       - "8900:8080"
 
+  #───────────────────────── Caldera OT agents (one per tenant) ───────────────
+  ics_agent1:
+    <<: *agent-base
+    container_name: ics_agent1
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.30
+    environment:
+      - CALDERA_SERVER=http://172.18.0.10:8888
+    depends_on:
+      - caldera_user1
+
+  ics_agent2:
+    <<: *agent-base
+    container_name: ics_agent2
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.31
+    environment:
+      - CALDERA_SERVER=http://172.18.0.11:8888
+    depends_on:
+      - caldera_user2
+
+  ics_agent3:
+    <<: *agent-base
+    container_name: ics_agent3
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.32
+    environment:
+      - CALDERA_SERVER=http://172.18.0.12:8888
+    depends_on:
+      - caldera_user3
+
+  #───────────────────────── Toolbox / POV container ─────────────────────────
+  toolbox:
+    image: alpine:3.20
+    container_name: toolbox
+    command: ["/bin/sh", "-c", "sleep infinity"]
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.40
+    restart: unless-stopped
+
+  #───────────────────────── Nginx reverse proxy ─────────────────────────────
   nginx:
     image: nginx:latest
     container_name: nginx-proxy
+    restart: unless-stopped
     networks:
       caldera-net:
         ipv4_address: 172.18.0.100
     ports:
-      - "443:443"    
+      - "443:443"        # HTTPS only
     volumes:
       - ./nginx-conf/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs  
-      - caldera_user1_frontend:/usr/share/nginx/html/user1
-      - caldera_user2_frontend:/usr/share/nginx/html/user2
-      - caldera_user3_frontend:/usr/share/nginx/html/user3
+      - ./certs:/etc/nginx/certs:ro
+      - caldera_user1_frontend:/usr/share/nginx/html/user1:ro
+      - caldera_user2_frontend:/usr/share/nginx/html/user2:ro
+      - caldera_user3_frontend:/usr/share/nginx/html/user3:ro
     command: ["nginx", "-g", "daemon off;"]
     depends_on:
       - caldera_user1
       - caldera_user2
       - caldera_user3
-      - openplc1
-      - openplc2
-      - openplc3
