@@ -14,6 +14,12 @@ volumes:
   caldera_user2_conf:
   caldera_user2_data:
   caldera_user2_frontend:
+  caldera_user3_conf:
+  caldera_user3_data:
+  caldera_user3_frontend:
+  openplc1_data:
+  openplc2_data:
+  openplc3_data:
 
 services:
   caldera_user1:
@@ -22,13 +28,10 @@ services:
     networks:
       caldera-net:
         ipv4_address: 172.18.0.10
-    ports:
-      - "8023:8022"
-      - "8881:8888" 
     environment:
       - CALDERA_API_URL=http://172.18.0.10:8888
       - VITE_BASE_PATH=/user1/
-      - VITE_CALDERA_API_URL=https://YOUR_SERVER_ADDRESS/user1/
+      - VITE_CALDERA_API_URL=https://140.116.169.80/user1/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user1_conf:/usr/src/app/conf
@@ -41,18 +44,66 @@ services:
     networks:
       caldera-net:
         ipv4_address: 172.18.0.11
-    ports:
-      - "8022:8022" 
-      - "8882:8888"
     environment:
       - CALDERA_API_URL=http://172.18.0.11:8888
       - VITE_BASE_PATH=/user2/
-      - VITE_CALDERA_API_URL=https://YOUR_SERVER_ADDRESS/user2/
+      - VITE_CALDERA_API_URL=https://140.116.169.80/user2/
     command: ["--log", "DEBUG"]
     volumes:
       - caldera_user2_conf:/usr/src/app/conf
       - caldera_user2_data:/usr/src/app/data
       - caldera_user2_frontend:/usr/src/app/plugins/magma/dist/assets
+
+  caldera_user3:
+    image: caldera:latest
+    container_name: caldera_user3
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.12
+    environment:
+      - CALDERA_API_URL=http://172.18.0.12:8888
+      - VITE_BASE_PATH=/user3/
+      - VITE_CALDERA_API_URL=https://140.116.169.80/user3/
+    command: ["--log", "DEBUG"]
+    volumes:
+      - caldera_user3_conf:/usr/src/app/conf
+      - caldera_user3_data:/usr/src/app/data
+      - caldera_user3_frontend:/usr/src/app/plugins/magma/dist/assets
+  openplc1:
+    image: victim:latest
+    container_name: victim_user1
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.20
+    volumes:
+      - openplc1_data:/docker_persistent
+    ports:
+      - "8022:502"
+      - "8888:8080"
+
+  openplc2:
+    image: victim:latest
+    container_name: victim_user2
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.21
+    volumes:
+      - openplc2_data:/docker_persistent
+    ports:
+      - "8023:502"
+      - "8889:8080"
+
+  openplc3:
+    image: victim:latest
+    container_name: victim_user3
+    networks:
+      caldera-net:
+        ipv4_address: 172.18.0.23
+    volumes:
+      - openplc3_data:/docker_persistent
+    ports:
+      - "8024:502"
+      - "8900:8080"
 
   nginx:
     image: nginx:latest
@@ -67,8 +118,12 @@ services:
       - ./certs:/etc/nginx/certs  
       - caldera_user1_frontend:/usr/share/nginx/html/user1
       - caldera_user2_frontend:/usr/share/nginx/html/user2
+      - caldera_user3_frontend:/usr/share/nginx/html/user3
     command: ["nginx", "-g", "daemon off;"]
     depends_on:
       - caldera_user1
       - caldera_user2
-      
+      - caldera_user3
+      - openplc1
+      - openplc2
+      - openplc3
