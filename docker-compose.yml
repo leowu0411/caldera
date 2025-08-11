@@ -1,9 +1,13 @@
 networks:
   caldera-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.18.0.0/16
+    external: true
+    name: caldera-net
+  wnet:
+    external: true
+    name: icsnet
+  fnet:
+    external: true
+    name: phynet
 
 volumes:
   #–– Caldera tenants ––––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -39,6 +43,9 @@ x-agent-base: &agent-base
   restart: unless-stopped
   networks:
     caldera-net:
+    wnet:
+    fnet:
+
 services:
   #───────────────────────── Caldera tenants ──────────────────────────────────
   caldera_user1:
@@ -130,6 +137,10 @@ services:
     networks:
       caldera-net:
         ipv4_address: 172.18.0.30
+      wnet:
+        ipv4_address: 192.168.0.50
+      fnet:
+        ipv4_address: 192.168.1.50
     environment:
       - CALDERA_SERVER=http://172.18.0.10:8888
     depends_on:
@@ -141,6 +152,10 @@ services:
     networks:
       caldera-net:
         ipv4_address: 172.18.0.31
+      wnet:
+        ipv4_address: 192.168.0.51
+      fnet:
+        ipv4_address: 192.168.1.51
     environment:
       - CALDERA_SERVER=http://172.18.0.11:8888
     depends_on:
@@ -152,6 +167,10 @@ services:
     networks:
       caldera-net:
         ipv4_address: 172.18.0.32
+      wnet:
+        ipv4_address: 192.168.0.52
+      fnet:
+        ipv4_address: 192.168.1.52
     environment:
       - CALDERA_SERVER=http://172.18.0.12:8888
     depends_on:
