@@ -1,0 +1,24 @@
+---
+
+- id: f8a9e2b1-3c5d-4e7f-9a1b-8d2c6e4f7a9b
+  name: Modbus - Read Tag
+  description: |
+    Modbus Read Tag: Read a specific tag value from the device
+
+    This function reads a tag value from a Modbus device using tag ID. Tags are device-specific identifiers that map to register addresses and data types, allowing for more intuitive interaction with industrial control systems.
+  tactic: collection
+  technique_id: T0861
+  technique_name: Point & Tag Identification
+  executors:
+  - platform: linux
+    name: sh
+    command: >
+      ./modbus_cli #{modbus.server.ip} --port #{modbus.server.port} read_tag #{modbus.read_tag.tag_id} --device #{modbus.device.id}
+    payloads:
+    - modbus_cli
+  - platform: windows
+    name: psh
+    command: >
+      .\modbus_cli.exe #{modbus.server.ip} --port #{modbus.server.port} read_tag #{modbus.read_tag.tag_id} --device #{modbus.device.id}
+    payloads:
+    - modbus_cli.exe
